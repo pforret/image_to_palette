@@ -8,8 +8,8 @@
 ### 5. implement the different actions you defined in 2. in main()
 ### ==============================================================================
 
-readonly PROGVERS="@version"
-readonly PROGAUTH="@email"
+readonly PROGVERS="0.0.1"
+readonly PROGAUTH="peter@forret.com"
 # uncomment next line to have time prefix for every output line
 #prefix_fmt='+%H:%M:%S | '
 readonly prefix_fmt=""
@@ -36,13 +36,8 @@ flag|v|verbose|output more
 flag|f|force|do not ask for confirmation (always yes)
 option|l|logd|folder for log files |log
 option|t|tmpd|folder for temp files|.tmp
-#you could also use /tmp/$PROGNAME as the default temp folder
-#option|u|user|USER to use|$USER
-#secret|p|pass|password to use
-param|1|action|action to perform: init/list/test/...
-# there can only be 1 param|n and it should be the last
+param|1|input|input file
 param|1|output|output file
-param|n|inputs|input files
 " | grep -v '^#'
 }
 
@@ -78,10 +73,6 @@ main() {
 
     action=$(lcase "$action")
     case $action in
-    init )
-        create_script_from_template
-        ;;
-
     test )
         run_tests
         ;;
@@ -530,12 +521,12 @@ parse_options() {
 
 create_script_from_template(){
   out "## SCRIPT INITIALISATION"
-  if [[ "@email" == @* ]] ; then
+  if [[ "peter@forret.com" == @* ]] ; then
     out "let's create a new project and remove everything you don't need!"
     ask EMAIL "What is your email address?" "$USER@$HOSTNAME"
     ask NEWNAME "What is the name of your script?" "newscript.sh"
     ask VERSION "What is the version of your script?" "1.0.0"
-    < "$PROGFULLPATH" awk -v email="$EMAIL" -v version="$VERSION" '{gsub(/@version/,version); gsub(/@email/,email); print$0}' > "$NEWNAME"
+    < "$PROGFULLPATH" awk -v email="$EMAIL" -v version="$VERSION" '{gsub(/0.0.1/,version); gsub(/peter@forret.com/,email); print$0}' > "$NEWNAME"
     if [[ -d $PROGDIR/usage ]] ; then
       if confirm "Delete all non-essential files? "; then
         rm -fr "$PROGDIR/usage"
@@ -543,7 +534,7 @@ create_script_from_template(){
       fi
     fi
   else
-    die "This is no longer a template script, it was already initialised by @email - please start from original script.sh"
+    die "This is no longer a template script, it was already initialised by peter@forret.com - please start from original script.sh"
   fi
 }
 
