@@ -43,12 +43,17 @@ param|1|output|output file
 
 ## Put your helper scripts here
 
-perform_action1(){
-  OUTPUT="$1"
-  shift
-  echo INPUTS = "$*"
-  echo OUTPUT = "$OUTPUT"
-  # < "$1"  do_stuff > "$2"
+derive_palette(){
+	# 1 convert <input> -colors 6 <temp.png>
+	# 2 identify -verbose -unique <temp.png>
+	 # Histogram:
+	 #      3778: ( 56, 76, 23) #384C17 srgb(56,76,23)
+	 #      5960: ( 62, 69, 25) #3E4519 srgb(62,69,25)
+	 #     10021: ( 81, 93, 33) #515D21 srgb(81,93,33)
+	 #      3189: (132,124, 53) #847C35 srgb(132,124,53)
+	 #      2967: (190,176, 65) #BEB041 srgb(190,176,65)
+	 #      4085: (207,209,164) #CFD1A4 srgb(207,209,164)
+
 }
 
 perform_action2(){
