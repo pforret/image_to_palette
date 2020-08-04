@@ -44,6 +44,22 @@ param|1|output|output file
 ## Put your helper scripts here
 
 derive_palette(){
+  local original="$1"
+  local reduced=$tmpd/$PROGNAME.$(echo "$original" | hash).png
+  local nbcolors=$2
+  
+  convert "$original" -resize 500x500 -colors $nbcolors "$reduced"
+  identify -verbose -unique "$reduced" | awk '
+  BEGIN         {show=0}
+  /Histogram:/  {show=1}
+  /Colormap:/   {show=0}
+  /\)/          {
+                  if(show > 0) {
+                    rgbpos=match($0,/#\w\w\w\w\w\w/); 
+                    print int($1), substr($0,rgbpos,7);
+                  }
+                }
+  '
 	# 1 convert <input> -colors 6 <temp.png>
 	# 2 identify -verbose -unique <temp.png>
 	 # Histogram:
@@ -56,12 +72,31 @@ derive_palette(){
 
 }
 
-perform_action2(){
-  OUTPUT="$1"
-  shift
-  echo INPUTS = "$*"
-  echo OUTPUT = "$OUTPUT"
-  # < "$1"  do_stuff > "$2"
+create_palette(){
+  local output=$1
+  local nbcolors=$2
+  local canvash=200
+  local blockh=180
+  local offseth=$(expr $canvash - $blockh)
+  local offseth=$(expr $offseth / 2)
+  local canvasw=1200
+  local blockw=$(expr $canvasw / $nbcolors)
+  local offsetw=10
+  echo -n "convert -size ${canvasw}x${canvash} canvas:white -font DejaVu-Sans -pointsize 32 " > $tmpfile
+  i=0
+  while read LINE ; do 
+    left=$(expr $offsetw + $blockw \* $i)
+    right=$(expr $left + $blockw - $offsetw - $offsetw)
+    top=$offseth
+    texttop=$(expr $top + 30)
+    bottom=$(expr $offseth + $blockh)
+    echo -n "-fill '$LINE' -draw 'rectangle $left,$top $right,$bottom' -fill '#0003' -draw 'rectangle $left,$top $right,50' -fill white -annotate +$left+$texttop '$LINE' " >> $tmpfile
+    i=$(expr $i + 1)
+  done
+  echo  "'$output' " >> $tmpfile
+  log "creation in $tmpfile"
+  cat $tmpfile
+  bash $tmpfile
 }
 
 #####################################################################
@@ -73,22 +108,16 @@ main() {
     log "Updated: $PROGDATE"
     log "Run as : $USER@$HOSTNAME"
     # add programs you need in your script here, like tar, wget, ffmpeg, rsync ...
-    verify_programs awk basename cut date dirname find grep head mkdir sed stat tput uname wc
+    verify_programs awk basename cut date dirname find grep head mkdir sed stat tput uname wc convert identify
     prep_log_and_temp_dir
 
-    action=$(lcase "$action")
-    case $action in
-    test )
-        run_tests
-        ;;
 
-    action2 )
-        #perform_action2 "$output" $inputs
-        ;;
+    derive_palette "$input" 6 \
+  | cut -d' ' -f2 \
+  | create_palette "$output" 6
 
-    *)
-        die "param [$action] not recognized"
-    esac
+
+
 }
 
 #####################################################################
@@ -484,7 +513,7 @@ parse_options() {
     ## then run through the given parameters
   if expects_single_params ; then
     #log "Process: single params"
-    single_params=$(list_options | grep 'param|1|' | cut -d'|' -f3 | xargs)
+    single_params=$(list_options | grep 'param|1|' | cut -d'|' -f3)
     nb_singles=$(echo "$single_params" | wc -w)
     log "Expect : $nb_singles single parameter(s): $single_params"
     [[ $# -eq 0 ]] && die "need the parameter(s) [$single_params]"
